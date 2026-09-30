@@ -1,0 +1,8 @@
+# requirements-dev.txt
+
+-r requirements.txt
+
+ipykernel==7.4.0
+matplotlib==3.11.2
+matplotlib-inline==0.2.2
+pandas==3.0.6

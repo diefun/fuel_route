@@ -2,6 +2,7 @@ import time
 
 from django.core.cache import cache
 from stations.services.geo import parse_location
+from stations.services.geojson import build_route_geojson
 from stations.services.optimizer import Stop, plan_fuel_stops
 from stations.services.route_stations import get_station_index
 from stations.services.routing import get_route
@@ -27,6 +28,20 @@ def _compute_plan(start, finish, origin, dest) -> dict:
     ]
 
     plan = plan_fuel_stops(stops, route.distance_miles, MAX_RANGE_MILES, MPG)
+    fuel_stops = [
+        {
+            "name": p.stop.ref.name,
+            "city": p.stop.ref.city,
+            "state": p.stop.ref.state,
+            "latitude": p.stop.ref.latitude,
+            "longitude": p.stop.ref.longitude,
+            "mile_marker": round(p.stop.mile, 1),
+            "price_per_gallon": float(p.stop.ref.price),
+            "gallons": round(p.gallons, 2),
+            "cost": round(p.cost, 2),
+        }
+        for p in plan.purchases
+    ]
 
     return {
         "start": {"query": start, "latitude": origin[0], "longitude": origin[1]},
@@ -34,20 +49,8 @@ def _compute_plan(start, finish, origin, dest) -> dict:
         "distance_miles": round(route.distance_miles, 1),
         "total_gallons": round(plan.total_gallons, 2),
         "total_fuel_cost": round(plan.total_cost, 2),
-        "fuel_stops": [
-            {
-                "name": p.stop.ref.name,
-                "city": p.stop.ref.city,
-                "state": p.stop.ref.state,
-                "latitude": p.stop.ref.latitude,
-                "longitude": p.stop.ref.longitude,
-                "mile_marker": round(p.stop.mile, 1),
-                "price_per_gallon": float(p.stop.ref.price),
-                "gallons": round(p.gallons, 2),
-                "cost": round(p.cost, 2),
-            }
-            for p in plan.purchases
-        ]
+        "fuel_stops": fuel_stops,
+        "map": build_route_geojson(route.coords, origin, dest, fuel_stops),
     }
 
 

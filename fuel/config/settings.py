@@ -127,10 +127,22 @@ MAILERS = {
     },
 }
 
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "TIMEOUT": 60 * 60 * 24,
+    }
+}
+
 DATA_DIR = BASE_DIR.parent / "data" / "raw"
 
 FUEL_DATA = {
     "PRICES_CSV": DATA_DIR / "fuel-prices-for-be-assessment.csv",
     "GAZETTEER_PLACES": DATA_DIR / "2026_Gaz_place_national.txt",
     "GAZETTEER_COUSUB": DATA_DIR / "2026_Gaz_cousubs_national.txt",
+}
+
+ROUTING = {
+    "OSRM_URL": "https://router.project-osrm.org",
+    "TIMEOUT_SECONDS": 20,
 }

@@ -1,10 +1,12 @@
 import csv
 from decimal import Decimal
 from django.conf import settings
+from django.core.cache import cache
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from stations.models import FuelStation
-from stations.services.geo import ALIASES, CA, strip_suffix, normalize_place_name
+from stations.services.geo import ALIASES, CA, normalize_place_name, load_gazetteer
+from stations.services.route_stations import reset_station_index
 
 
 class Command(BaseCommand):
@@ -17,11 +19,17 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         stations = self.read_stations(options["csv"])
-        places = self.load_gazetteer(options["places"])
-        cousub = self.load_gazetteer(options["cousub"])
+
+        self.stdout.write(f"Loading {options['places']}")
+        places = load_gazetteer(options["places"])
+        self.stdout.write(f"{len(places)} places loaded")
+
+        self.stdout.write(f"Loading {options['cousub']}")
+        cousub = load_gazetteer(options["cousub"])
+        self.stdout.write(f"{len(cousub)} county subdivisions loaded")
+
         self.geocode(stations, places, cousub)
         self.save(stations)
-        self.stdout.write(self.style.SUCCESS("Done."))
 
     def read_stations(self, path):
         self.stdout.write(f"Reading {path}")
@@ -52,27 +60,6 @@ class Command(BaseCommand):
         
         return stations
     
-    def load_gazetteer(self, path):
-        self.stdout.write(f"Loading {path}")
-        best = {}
-
-        with open(path, newline="", encoding="utf-8-sig") as f:
-            reader = csv.DictReader(f, delimiter="|")
-            reader.fieldnames = [h.strip() for h in reader.fieldnames]
-
-            for row in reader:
-                key = (normalize_place_name(strip_suffix(row["NAME"].strip())), row["USPS"].strip())
-                rank = (row["FUNCSTAT"].strip() == "A", int(row["ALAND"]))
-                current = best.get(key)
-                
-                if current is None or rank > current[0]:
-                    best[key] = (rank, float(row["INTPTLAT"]), float(row["INTPTLONG"].strip()))
-
-        gazetteer = {key: (lat, lon) for key, (_, lat, lon) in best.items()}
-        self.stdout.write(f"{len(gazetteer)} gazetteer entries loaded")
-        
-        return gazetteer
-
     def geocode(self, stations, places, cousub):
         self.stdout.write("Geocoding stations")
         places_count = 0
@@ -113,3 +100,6 @@ class Command(BaseCommand):
             FuelStation.objects.bulk_create(objects, batch_size=1000)
 
         self.stdout.write(f"{len(objects)} stations saved to database")
+
+        reset_station_index()
+        cache.clear()

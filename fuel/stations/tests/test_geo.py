@@ -1,7 +1,7 @@
 # fuel/tests/test_geo.py
 from django.test import SimpleTestCase
-
-from stations.services.geo import normalize_place_name, strip_suffix
+from stations.services.geo import normalize_place_name, strip_suffix, parse_location
+from unittest import mock
 
 
 class NormalizePlaceNameTests(SimpleTestCase):
@@ -25,3 +25,9 @@ class StripSuffixTests(SimpleTestCase):
 
     def test_multi_word_suffix(self):
         self.assertEqual(strip_suffix("Juneau city and borough"), "Juneau")
+
+
+@mock.patch("stations.services.geo.get_cousub_index", return_value={})
+@mock.patch("stations.services.geo.get_places_index", return_value={("DALLAS", "TX"): (32.79, -96.76)})
+def test_city_state(self, _places, _cousub):
+    self.assertEqual(parse_location("Dallas, TX"), (32.79, -96.76))

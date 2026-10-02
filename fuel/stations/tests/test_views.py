@@ -23,7 +23,9 @@ class RoutePlanViewTests(SimpleTestCase):
         mock_plan.return_value = FAKE_PLAN
         response = self.client.get(URL, {"start": "Dallas, TX", "finish": "Chicago, IL"})
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), FAKE_PLAN)
+        data = response.json()
+        self.assertEqual(data["total_fuel_cost"], FAKE_PLAN["total_fuel_cost"])
+        self.assertIn("map_url", data)  # the view adds a link to the HTML map
         mock_plan.assert_called_once_with("Dallas, TX", "Chicago, IL")
 
     def test_post_json_returns_plan(self, mock_plan):

@@ -9,6 +9,9 @@ Vehicle assumptions from the assignment: 500-mile range and 10 miles per gallon 
 Requires Python 3.12+ (Django 6.1).
 
 ```bash
+git clone https://github.com/diefun/fuel_route.git
+cd fuel_route
+
 python -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
@@ -95,7 +98,7 @@ Since the addresses aren't usable, I geocode at city level using the US Census G
 - When two gazetteer entries end up with the same key in the same state, I prefer the incorporated place and then the larger land area.
 - One alias for "Town of Pecos city" (TX), which matters because Pecos has 9 stations on I-20. I checked the other names with a "Town of / City of" prefix, and none of them has stations, so a general rule wasn't worth it.
 
-Result: **96.0% of stations geocoded** (94.4% from Places, 1.6% from County Subdivisions). The remaining 263 are mostly unincorporated communities. They are evenly spread except in Virginia (15.7% missing), where many truck stops sit in unincorporated places along I-95 and I-81. Coverage on the main corridors is still dense.
+Result: **96.2% of stations geocoded** (94.6% from Places, 1.6% from County Subdivisions). The remaining 249 are mostly unincorporated communities. They are evenly spread except in Virginia (15.7% missing), where many truck stops sit in unincorporated places along I-95 and I-81. Coverage on the main corridors is still dense.
 
 Stations without coordinates are kept in the database but ignored when planning routes.
 
@@ -193,7 +196,7 @@ fuel/
 
 ## What I would improve with more time
 
-- **Geocode the remaining 4%** with Nominatim (OpenStreetMap) at import time, rate-limited and cached. It would mostly help in Virginia.
+- **Geocode the remaining 3.8%** with Nominatim (OpenStreetMap) at import time, rate-limited and cached. It would mostly help in Virginia.
 - **Penalize the number of stops** in the optimizer (or require a minimum purchase per stop), since drivers usually prefer fewer, larger fill-ups over saving a few cents.
 - **Use exact station coordinates** if a source with them were available, and include the detour distance in the calculation.
 - **Use Redis for the cache**, so it's shared between processes and survives restarts. It's only a settings change.
